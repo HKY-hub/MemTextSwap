@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MemTextSwap.UI.Models;
@@ -49,6 +50,65 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string sessionsSummary = "无活动会话";
+
+    public void SetStatus(string message)
+    {
+        StatusText = message;
+    }
+
+    public async Task SelectGameByExeAsync(string exePath)
+    {
+        try
+        {
+            string fullPath = Path.GetFullPath(exePath);
+            if (!File.Exists(fullPath))
+            {
+                StatusText = $"文件不存在: {fullPath}";
+                return;
+            }
+            StatusText = $"正在处理: {fullPath}";
+
+            // 已在运行：直接选中。
+            await RefreshAsync();
+            var existing = Processes.FirstOrDefault(p =>
+                string.Equals(p.ExePath, fullPath, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                SelectedProcess = existing;
+                StatusText = $"已选中运行中的进程: pid={existing.Pid} {existing.Name}，可点击“注入”";
+                return;
+            }
+
+            // 未运行：启动游戏并等待进程出现。
+            StatusText = "游戏未运行，正在启动并等待进程…";
+            var startInfo = new ProcessStartInfo(fullPath)
+            {
+                WorkingDirectory = Path.GetDirectoryName(fullPath) ?? "",
+                UseShellExecute = true,
+            };
+            Process.Start(startInfo);
+
+            var deadline = DateTime.UtcNow.AddSeconds(90);
+            while (DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(1000);
+                await RefreshAsync();
+                existing = Processes.FirstOrDefault(p =>
+                    string.Equals(p.ExePath, fullPath, StringComparison.OrdinalIgnoreCase));
+                if (existing is not null)
+                {
+                    SelectedProcess = existing;
+                    StatusText = $"游戏已启动并选中: pid={existing.Pid} {existing.Name}，可点击“注入”";
+                    return;
+                }
+            }
+            StatusText = $"等待超时，未找到进程: {fullPath}（请确认游戏能正常启动）";
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("选择游戏", ex);
+        }
+    }
 
     [RelayCommand]
     private async Task RefreshAsync()

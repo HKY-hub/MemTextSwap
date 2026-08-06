@@ -4,15 +4,21 @@
         x:Class="MemTextSwap.UI.Views.MainWindow"
         Title="MemTextSwap 游戏汉化工具"
         Width="1080" Height="720"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        DragDrop.DragOver="OnDragOver"
+        DragDrop.Drop="OnDrop">
 
     <DockPanel>
         <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1"
                 BorderBrush="#333333">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="刷新进程" Command="{Binding RefreshCommand}" />
+                <Button Content="选择游戏文件…" Click="OnPickGameFile" />
                 <Button Content="注入选中进程" Command="{Binding InjectCommand}" />
                 <Button Content="卸载选中进程" Command="{Binding UnloadCommand}" />
+                <TextBlock Text="提示：可把游戏 .exe 拖进窗口；点行选中后点“注入”"
+                           VerticalAlignment="Center" Foreground="#888888" />
                 <TextBlock Text="{Binding SessionsSummary}" VerticalAlignment="Center"
                            Foreground="#AAAAAA" />
             </StackPanel>
@@ -29,9 +35,11 @@
                     <TextBlock DockPanel.Dock="Top" Margin="0,0,0,6"
                                Text="{Binding DictionarySummary}" />
                     <dg:DataGrid ItemsSource="{Binding Processes}"
-                                 SelectedItem="{Binding SelectedProcess}"
+                                 SelectedItem="{Binding SelectedProcess, Mode=TwoWay}"
+                                 SelectionMode="Single"
                                  AutoGenerateColumns="False"
-                                 IsReadOnly="True">
+                                 IsReadOnly="True"
+                                 DoubleTapped="OnGameDoubleTapped">
                         <dg:DataGrid.Columns>
                             <dg:DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="80" />
                             <dg:DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" />
