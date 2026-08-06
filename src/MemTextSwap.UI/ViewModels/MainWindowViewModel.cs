@@ -53,103 +53,164 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshAsync()
     {
-        Processes.Clear();
-        var list = _processes.ListGames();
-        foreach (var item in list)
+        try
         {
-            item.Injected = _pipeServer.GetSession(item.Pid) is not null;
-            Processes.Add(item);
+            Processes.Clear();
+            var list = _processes.ListGames();
+            foreach (var item in list)
+            {
+                item.Injected = _pipeServer.GetSession(item.Pid) is not null;
+                Processes.Add(item);
+            }
+            StatusText = $"共发现 {Processes.Count} 个进程";
+            UpdateSessions();
         }
-        StatusText = $"共发现 {Processes.Count} 个进程";
-        UpdateSessions();
-        await Task.CompletedTask;
+        catch (Exception ex)
+        {
+            HandleCommandError("刷新进程", ex);
+        }
     }
 
     [RelayCommand]
     private async Task InjectAsync()
     {
-        var target = SelectedProcess;
-        if (target is null)
+        try
         {
-            StatusText = "请先选择一个进程";
-            return;
+            var target = SelectedProcess;
+            if (target is null)
+            {
+                StatusText = "请先选择一个进程";
+                return;
+            }
+            if (_pipeServer.GetSession(target.Pid) is not null)
+            {
+                StatusText = $"pid={target.Pid} 已注入，无需重复操作";
+                return;
+            }
+            var session = _pipeServer.CreateSession(target.Pid);
+            InjectResult result = await _injector.InjectAsync(target.Pid, target.Is64Bit,
+                                                              session.PipeName);
+            StatusText = result.Ok
+                ? $"注入成功: pid={target.Pid}（{target.Name}）"
+                : $"注入失败: pid={target.Pid} code={result.Code} {result.Error}";
+            if (!result.Ok)
+            {
+                await session.DisposeAsync();
+            }
+            target.Injected = result.Ok;
+            UpdateSessions();
         }
-        if (_pipeServer.GetSession(target.Pid) is not null)
+        catch (Exception ex)
         {
-            StatusText = $"pid={target.Pid} 已注入，无需重复操作";
-            return;
+            HandleCommandError("注入", ex);
         }
-        var session = _pipeServer.CreateSession(target.Pid);
-        InjectResult result = await _injector.InjectAsync(target.Pid, target.Is64Bit,
-                                                          session.PipeName);
-        StatusText = result.Ok
-            ? $"注入成功: pid={target.Pid}（{target.Name}）"
-            : $"注入失败: pid={target.Pid} code={result.Code} {result.Error}";
-        if (!result.Ok)
-        {
-            await session.DisposeAsync();
-        }
-        target.Injected = result.Ok;
-        UpdateSessions();
     }
 
     [RelayCommand]
     private async Task UnloadAsync()
     {
-        var target = SelectedProcess;
-        if (target is null)
+        try
         {
-            StatusText = "请先选择一个进程";
-            return;
+            var target = SelectedProcess;
+            if (target is null)
+            {
+                StatusText = "请先选择一个进程";
+                return;
+            }
+            await _pipeServer.UnloadAsync(target.Pid);
+            StatusText = $"卸载指令已发送: pid={target.Pid}";
+            await Task.Delay(800);
+            target.Injected = _pipeServer.GetSession(target.Pid) is not null;
+            UpdateSessions();
         }
-        await _pipeServer.UnloadAsync(target.Pid);
-        StatusText = $"卸载指令已发送: pid={target.Pid}";
-        await Task.Delay(800);
-        target.Injected = _pipeServer.GetSession(target.Pid) is not null;
-        UpdateSessions();
+        catch (Exception ex)
+        {
+            HandleCommandError("卸载", ex);
+        }
     }
 
     [RelayCommand]
     private void SaveSettings()
     {
-        _settings.Save();
-        ReloadDictionary();
-        StatusText = "设置与词典已保存/加载";
+        try
+        {
+            _settings.Save();
+            ReloadDictionary();
+            StatusText = "设置与词典已保存/加载";
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("保存设置", ex);
+        }
     }
 
     [RelayCommand]
     public void ReloadDictionary()
     {
-        _dictionary.LoadAll(_settings.Current.DictionaryPaths);
-        DictionarySummary = $"已加载词典条目: {_dictionary.Count}";
-        StatusText = DictionarySummary;
+        try
+        {
+            _dictionary.LoadAll(_settings.Current.DictionaryPaths);
+            DictionarySummary = $"已加载词典条目: {_dictionary.Count}";
+            StatusText = DictionarySummary;
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("加载词典", ex);
+        }
     }
 
     [RelayCommand]
     private void ExportDictionary()
     {
-        string path = Path.Combine(_settings.ConfigDir, "dictionary-export.txt");
-        _dictionary.ExportFile(path);
-        StatusText = $"词典已导出: {path}";
+        try
+        {
+            string path = Path.Combine(_settings.ConfigDir, "dictionary-export.txt");
+            _dictionary.ExportFile(path);
+            StatusText = $"词典已导出: {path}";
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("导出词典", ex);
+        }
     }
 
     [RelayCommand]
     private async Task ClearCacheAsync()
     {
-        await _cache.ClearAsync();
-        await RefreshCacheAsync();
+        try
+        {
+            await _cache.ClearAsync();
+            await RefreshCacheAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("清空缓存", ex);
+        }
     }
 
     [RelayCommand]
     private async Task RefreshCacheAsync()
     {
-        CacheEntries.Clear();
-        foreach (var item in await _cache.ListAsync(500))
+        try
         {
-            CacheEntries.Add(new CacheEntry(item.Source, item.Target, item.Origin,
-                                            item.Updated));
+            CacheEntries.Clear();
+            foreach (var item in await _cache.ListAsync(500))
+            {
+                CacheEntries.Add(new CacheEntry(item.Source, item.Target, item.Origin,
+                                                item.Updated));
+            }
+            StatusText = $"缓存条目: {CacheEntries.Count}";
         }
-        StatusText = $"缓存条目: {CacheEntries.Count}";
+        catch (Exception ex)
+        {
+            HandleCommandError("刷新缓存", ex);
+        }
+    }
+
+    private void HandleCommandError(string action, Exception ex)
+    {
+        _log.Error($"{action}失败: {ex}");
+        StatusText = $"{action}失败: {ex.Message}";
     }
 
     private void UpdateSessions()

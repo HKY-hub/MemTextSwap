@@ -7,10 +7,26 @@ public sealed class LogService
 {
     private const int MaxEntries = 2000;
     private readonly object _lock = new();
+    private readonly string _filePath;
 
     public ObservableCollection<LogEntry> Entries { get; } = new();
 
     public event Action<LogEntry>? EntryAdded;
+
+    public LogService()
+    {
+        string dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "MemTextSwap", "logs");
+        _filePath = Path.Combine(dir, "app.log");
+        try
+        {
+            Directory.CreateDirectory(dir);
+        }
+        catch
+        {
+        }
+    }
 
     public void Info(string message) => Add("INFO", message);
     public void Warn(string message) => Add("WARN", message);
@@ -29,5 +45,13 @@ public sealed class LogService
         }
         EntryAdded?.Invoke(entry);
         System.Diagnostics.Debug.WriteLine($"[{entry.Time:HH:mm:ss}] {level} {message}");
+        try
+        {
+            File.AppendAllText(_filePath,
+                $"[{entry.Time:yyyy-MM-dd HH:mm:ss}] {level} {message}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
     }
 }
