@@ -5,7 +5,6 @@
         Title="MemTextSwap 游戏汉化工具"
         Width="1080" Height="720"
         WindowStartupLocation="CenterScreen"
-        AllowDrop="True"
         DragDrop.DragOver="OnDragOver"
         DragDrop.Drop="OnDrop">
 

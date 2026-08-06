@@ -20,7 +20,7 @@ if ($LASTEXITCODE -ne 0) { throw "x64 native tests failed" }
 if ($LASTEXITCODE -ne 0) { throw "x86 native tests failed" }
 
 Write-Host "== 4/5 C# UI 编译 + 单元/集成测试 =="
-dotnet build "$root\src\MemTextSwap.UI" -c Release
+dotnet build "$root\src\MemTextSwap.UI" -c Release -t:Rebuild
 dotnet test "$root\tests\MemTextSwap.Tests" -c Release
 if ($LASTEXITCODE -ne 0) { throw "C# tests failed" }
 
