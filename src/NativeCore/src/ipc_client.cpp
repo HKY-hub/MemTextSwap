@@ -199,12 +199,14 @@ void IpcClient::ControlLoop() {
         // persistent connection and request traffic.
         (void)lastPing;
 
-        // Drain UI->DLL control frames (UNLOAD/PONG) between requests. Reads are
-        // serialized with requests under writeMutex_ so a blocking read never
-        // overlaps a write on the same pipe handle.
+        // Drain UI->DLL control frames (UNLOAD/PONG) between requests. The peek
+        // and the read happen under the SAME lock so a request thread can never
+        // consume a frame between our peek and read; without that, the read
+        // would block forever holding the mutex and freeze every game thread.
+        std::lock_guard<std::mutex> lock(writeMutex_);
         DWORD available = 0;
-        if (PeekNamedPipe(pipe_, nullptr, 0, nullptr, &available, nullptr) && available > 0) {
-            std::lock_guard<std::mutex> lock(writeMutex_);
+        if (PeekNamedPipe(pipe_, nullptr, 0, nullptr, &available, nullptr) &&
+            available >= sizeof(GtiHeader)) {
             GtiFrame frame;
             if (ReadFrame(&frame)) {
                 HandleFrame(frame);

@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <string>
 
 #include <windows.h>
@@ -137,6 +138,10 @@ void* __cdecl DetourStringNewUtf16(const uint16_t* text, int32_t len) {
 }  // namespace
 
 bool InstallUnityIl2CppHooks() {
+    if (std::getenv("GTI_DISABLE_IL2CPP_HOOK")) {
+        Log(LogLevel::Warn, "IL2CPP hooks disabled by GTI_DISABLE_IL2CPP_HOOK");
+        return false;
+    }
     HMODULE gameAssembly = GetModuleHandleW(L"GameAssembly.dll");
     if (!gameAssembly) {
         return false;
