@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "GameTextInjector 配置",
+  "title": "MemTextSwap 配置",
   "type": "object",
   "properties": {
     "translationMode": {
@@ -43,7 +43,7 @@
     },
     "cachePath": {
       "type": "string",
-      "description": "SQLite 缓存路径，默认 %APPDATA%\\GameTextInjector\\cache.db"
+      "description": "SQLite 缓存路径，默认 %APPDATA%\\MemTextSwap\\cache.db"
     }
   }
 }

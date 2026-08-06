@@ -42,6 +42,9 @@ const char* ProduceLineImpl(int* counter) {
 }
 
 const char* __cdecl DetourProduceLine(int* counter) {
+    if (!HooksActive()) {
+        return g_origProduceLine(counter);
+    }
     thread_local bool inHook = false;
     if (inHook) {
         return g_origProduceLine(counter);

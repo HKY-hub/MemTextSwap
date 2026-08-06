@@ -73,7 +73,7 @@ std::wstring GtiDllPath() {
 
 // Called by the injected Python bootstrap through ctypes.
 extern "C" __declspec(dllexport) void* __stdcall gti_py_translate(const char* utf8) {
-    if (!utf8) {
+    if (!HooksActive() || !utf8) {
         return nullptr;
     }
     std::string target;

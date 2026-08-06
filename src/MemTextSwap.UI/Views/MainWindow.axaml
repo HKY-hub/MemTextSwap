@@ -1,0 +1,107 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dg="using:Avalonia.Controls"
+        x:Class="MemTextSwap.UI.Views.MainWindow"
+        Title="MemTextSwap 游戏汉化工具"
+        Width="1080" Height="720"
+        WindowStartupLocation="CenterScreen">
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Padding="8" BorderThickness="0,0,0,1"
+                BorderBrush="#333333">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="刷新进程" Command="{Binding RefreshCommand}" />
+                <Button Content="注入选中进程" Command="{Binding InjectCommand}" />
+                <Button Content="卸载选中进程" Command="{Binding UnloadCommand}" />
+                <TextBlock Text="{Binding SessionsSummary}" VerticalAlignment="Center"
+                           Foreground="#AAAAAA" />
+            </StackPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Padding="8" BorderThickness="0,1,0,0"
+                BorderBrush="#333333">
+            <TextBlock Text="{Binding StatusText}" Foreground="#CCCCCC" />
+        </Border>
+
+        <TabControl Margin="8">
+            <TabItem Header="进程列表">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,6"
+                               Text="{Binding DictionarySummary}" />
+                    <dg:DataGrid ItemsSource="{Binding Processes}"
+                                 SelectedItem="{Binding SelectedProcess}"
+                                 AutoGenerateColumns="False"
+                                 IsReadOnly="True">
+                        <dg:DataGrid.Columns>
+                            <dg:DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="80" />
+                            <dg:DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*" />
+                            <dg:DataGridTextColumn Header="位数" Binding="{Binding Bitness}" Width="70" />
+                            <dg:DataGridTextColumn Header="引擎" Binding="{Binding Engine}" Width="160" />
+                            <dg:DataGridTextColumn Header="状态" Binding="{Binding Injected}" Width="70" />
+                        </dg:DataGrid.Columns>
+                    </dg:DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="翻译设置">
+                <StackPanel Spacing="10" Margin="12" Width="480" HorizontalAlignment="Left">
+                    <TextBlock Text="翻译模式" />
+                    <ComboBox ItemsSource="{Binding TranslationModes}"
+                              SelectedItem="{Binding Settings.TranslationMode}" />
+                    <TextBlock Text="AI Base URL" />
+                    <TextBox Text="{Binding Settings.Ai.BaseUrl}" />
+                    <TextBlock Text="AI 模型" />
+                    <TextBox Text="{Binding Settings.Ai.Model}" />
+                    <TextBlock Text="API Key（建议使用环境变量 GTI_DEEPSEEK_API_KEY）" />
+                    <TextBox Text="{Binding Settings.Ai.ApiKey}" />
+                    <TextBlock Text="Hook 阻塞超时（毫秒）" />
+                    <TextBox Text="{Binding Settings.BlockTimeoutMs}" />
+                    <TextBlock Text="词典文件路径（每行一个，txt/json）" />
+                    <ListBox Height="90"
+                             ItemsSource="{Binding Settings.DictionaryPaths}" />
+                    <Button Content="保存设置并加载词典" Command="{Binding SaveSettingsCommand}" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="词典管理">
+                <StackPanel Spacing="10" Margin="12" Width="480" HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding DictionarySummary}" />
+                    <TextBlock Text="支持 AutoTranslator 兼容 flat（key=value）与 JSON 词典，"
+                               TextWrapping="Wrap" />
+                    <TextBlock Text="词典路径在「翻译设置」中配置，保存后自动加载。" TextWrapping="Wrap" />
+                    <Button Content="重新加载词典" Command="{Binding ReloadDictionaryCommand}" />
+                    <Button Content="导出词典到文件" Command="{Binding ExportDictionaryCommand}" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="缓存管理">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8"
+                                Margin="0,0,0,6">
+                        <Button Content="刷新缓存" Command="{Binding RefreshCacheCommand}" />
+                        <Button Content="清空缓存" Command="{Binding ClearCacheCommand}" />
+                    </StackPanel>
+                    <dg:DataGrid ItemsSource="{Binding CacheEntries}" AutoGenerateColumns="False"
+                                 IsReadOnly="True">
+                        <dg:DataGrid.Columns>
+                            <dg:DataGridTextColumn Header="原文" Binding="{Binding Source}" Width="*" />
+                            <dg:DataGridTextColumn Header="译文" Binding="{Binding Target}" Width="*" />
+                            <dg:DataGridTextColumn Header="来源" Binding="{Binding Origin}" Width="70" />
+                            <dg:DataGridTextColumn Header="更新时间" Binding="{Binding Updated}" Width="140" />
+                        </dg:DataGrid.Columns>
+                    </dg:DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="日志">
+                <ListBox ItemsSource="{Binding Logs}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

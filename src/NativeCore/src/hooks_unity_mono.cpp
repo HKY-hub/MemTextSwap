@@ -61,7 +61,7 @@ void* MonoStringNewLenImpl(MonoDomain* domain, const char* text, uint32_t len) {
 }
 
 void* __cdecl DetourMonoStringNew(MonoDomain* domain, const char* text) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origNew(domain, text);
     }
     g_inHook = true;
@@ -76,7 +76,7 @@ void* __cdecl DetourMonoStringNew(MonoDomain* domain, const char* text) {
 }
 
 void* __cdecl DetourMonoStringNewWrapper(const char* text) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origWrapper(text);
     }
     g_inHook = true;
@@ -91,7 +91,7 @@ void* __cdecl DetourMonoStringNewWrapper(const char* text) {
 }
 
 void* __cdecl DetourMonoStringNewLen(MonoDomain* domain, const char* text, uint32_t len) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origNewLen(domain, text, len);
     }
     g_inHook = true;

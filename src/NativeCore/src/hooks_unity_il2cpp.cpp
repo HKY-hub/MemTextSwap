@@ -71,7 +71,7 @@ void* StringNewUtf16Impl(const uint16_t* text, int32_t len) {
 }
 
 void* __cdecl DetourStringNew(const char* text) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origNew(text);
     }
     g_inHook = true;
@@ -87,7 +87,7 @@ void* __cdecl DetourStringNew(const char* text) {
 }
 
 void* __cdecl DetourStringNewWrapper(const char* text) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origWrapper(text);
     }
     g_inHook = true;
@@ -103,7 +103,7 @@ void* __cdecl DetourStringNewWrapper(const char* text) {
 }
 
 void* __cdecl DetourStringNewLen(const char* text, uint32_t len) {
-    if (g_inHook || !text) {
+    if (!HooksActive() || g_inHook || !text) {
         return g_origNewLen(text, len);
     }
     g_inHook = true;
@@ -119,7 +119,7 @@ void* __cdecl DetourStringNewLen(const char* text, uint32_t len) {
 }
 
 void* __cdecl DetourStringNewUtf16(const uint16_t* text, int32_t len) {
-    if (g_inHook || !text || len <= 0) {
+    if (!HooksActive() || g_inHook || !text || len <= 0) {
         return g_origNewUtf16(text, len);
     }
     g_inHook = true;

@@ -1,4 +1,4 @@
-# GameTextInjector IPC 协议 v1
+# MemTextSwap IPC 协议 v1
 
 ## 传输
 
@@ -41,4 +41,4 @@
 - UNLOAD 由 UI 在任意时刻发送；DLL 回 UNLOAD_ACK 后进入卸载流程。
 - PING/PONG 为协议保留；当前实现不主动发送 PING，存活由连接与请求流量判定（避免管道写会合死锁，见 architecture.md）。
 - LOG 帧协议保留；当前实现停用，DLL 日志走 `GTI_LOG_FILE` 文件与 OutputDebugString。
-- C++ 与 C# 共享同一组测试向量（tests/native/test_crc_frame.cpp 与 tests/GameTextInjector.Tests/IpcProtocolTests.cs）。
+- C++ 与 C# 共享同一组测试向量（tests/native/test_crc_frame.cpp 与 tests/MemTextSwap.Tests/IpcProtocolTests.cs）。

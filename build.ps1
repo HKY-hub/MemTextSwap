@@ -20,8 +20,8 @@ if ($LASTEXITCODE -ne 0) { throw "x64 native tests failed" }
 if ($LASTEXITCODE -ne 0) { throw "x86 native tests failed" }
 
 Write-Host "== 4/5 C# UI 编译 + 单元/集成测试 =="
-dotnet build "$root\src\GameTextInjector.UI" -c Release
-dotnet test "$root\tests\GameTextInjector.Tests" -c Release
+dotnet build "$root\src\MemTextSwap.UI" -c Release
+dotnet test "$root\tests\MemTextSwap.Tests" -c Release
 if ($LASTEXITCODE -ne 0) { throw "C# tests failed" }
 
 Write-Host "== 5/5 密钥扫描（推送门禁）=="
@@ -36,7 +36,7 @@ Write-Host "密钥扫描通过，未发现敏感信息。"
 if ($Push) {
     Write-Host "== 推送门禁通过：提交并创建公开仓库 HKY-hub/MemTextSwap =="
     git -C $root add -A
-    git -C $root commit -m "feat: GameTextInjector Phase 0 基础链路（双架构注入/IPC/翻译管线）" | Out-Null
+    git -C $root commit -m "feat: MemTextSwap Phase 0 基础链路（双架构注入/IPC/翻译管线）" | Out-Null
     gh repo create MemTextSwap --public --source $root --remote origin --push
 } else {
     Write-Host "未指定 -Push，跳过建仓推送。"

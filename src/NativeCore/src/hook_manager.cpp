@@ -1,6 +1,7 @@
 #include "gti/hooks.h"
 
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 
 #include <MinHook.h>
@@ -10,6 +11,18 @@
 #include "gti/log.h"
 
 namespace gti {
+
+namespace {
+std::atomic<bool> g_hooksActive{true};
+}
+
+bool HooksActive() {
+    return g_hooksActive.load();
+}
+
+void SetHooksActive(bool active) {
+    g_hooksActive.store(active);
+}
 
 // Forward declarations of per-engine installers (one per hooks_*.cpp).
 bool InstallTestTargetHooks();
@@ -84,12 +97,14 @@ bool HookManager::UninstallAll() {
         if (MH_DisableHook(entry.target) != MH_OK) {
             ok = false;
         }
-        MH_RemoveHook(entry.target);
     }
-    entries().clear();
-    MH_Uninitialize();
     FlushInstructionCache(GetCurrentProcess(), nullptr, 0);
-    Log(LogLevel::Info, "all hooks removed (%s)", ok ? "ok" : "partial");
+    // MH_RemoveHook / MH_Uninitialize are intentionally NOT called: a game
+    // thread may still be executing the trampoline, and freeing it would
+    // unmap code that is currently running. Disabled hooks + retained
+    // trampolines fully restore the game and are safe for re-injection.
+    Log(LogLevel::Info, "hooks disabled (%s), trampolines retained for safety",
+        ok ? "ok" : "partial");
     return ok;
 }
 

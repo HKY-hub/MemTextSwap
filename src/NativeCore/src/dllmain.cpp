@@ -132,6 +132,7 @@ DWORD WINAPI WorkerMain(const std::wstring& pipeName) {
     }
 
     Log(LogLevel::Info, "unloading: disabling hooks, disconnecting IPC");
+    SetHooksActive(false);
     IpcClient::Instance().Stop();
     HookManager::UninstallAll();
     Log(LogLevel::Info, "waiting for in-flight requests to settle");

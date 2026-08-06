@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Pipes;
 using System.Text;
-using GameTextInjector.UI.Services;
+using MemTextSwap.UI.Services;
 
 // Protocol probe: acts as the UI-side pipe server and talks to a REAL injected
 // NativeCore client (TestTarget + Injector). Prints every received frame and

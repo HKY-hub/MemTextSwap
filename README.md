@@ -1,4 +1,4 @@
-# GameTextInjector
+# MemTextSwap
 
 通用 PC 单机 GAL/RPG 游戏 · **纯内存 REPLACE 内嵌汉化工具**（对标 RenpyThief 6.0 核心功能）。
 
@@ -23,7 +23,7 @@
 ```
 build/x64/src/NativeCore/Release/NativeCore64.dll + Injector64.exe + TestTarget64.exe
 build/x86/src/NativeCore/Release/NativeCore32.dll + Injector32.exe + TestTarget32.exe
-src/GameTextInjector.UI/bin/Release/net8.0-windows/GameTextInjector.exe
+src/MemTextSwap.UI/bin/Release/net8.0-windows/MemTextSwap.exe
 ```
 
 启动 UI（管理员权限）→ 刷新进程 → 选中目标 → 注入。翻译设置中配置词典路径或 AI（密钥建议用环境变量 `GTI_DEEPSEEK_API_KEY`）。
@@ -37,7 +37,7 @@ src/GameTextInjector.UI/bin/Release/net8.0-windows/GameTextInjector.exe
 
 ```
 src/NativeCore/           C++ 底层 DLL（含 Injector/TestTarget/管道探针工具）
-src/GameTextInjector.UI/  Avalonia 前端
+src/MemTextSwap.UI/  Avalonia 前端
 third_party/minhook/      MinHook v1.3.4（MIT，固定 commit）
 tests/                    原生 GoogleTest + C# xUnit（含端到端注入测试）
 docs/                     架构、协议、引擎、配置说明
