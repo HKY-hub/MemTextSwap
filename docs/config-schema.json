@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GameTextInjector 配置",
+  "type": "object",
+  "properties": {
+    "translationMode": {
+      "type": "string",
+      "enum": ["Local", "Ai"],
+      "description": "翻译模式：Local 只用词典/缓存；Ai 启用在线翻译"
+    },
+    "blockTimeoutMs": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 60000,
+      "default": 3000,
+      "description": "Hook 阻塞等待翻译的超时（毫秒），超时回原文"
+    },
+    "ai": {
+      "type": "object",
+      "properties": {
+        "baseUrl": { "type": "string", "default": "https://api.deepseek.com/v1" },
+        "model": { "type": "string", "default": "deepseek-chat" },
+        "apiKey": { "type": "string", "description": "可留空，优先读环境变量 GTI_DEEPSEEK_API_KEY" },
+        "timeoutMs": { "type": "integer", "default": 15000 },
+        "concurrency": { "type": "integer", "default": 2 },
+        "retries": { "type": "integer", "default": 2 }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "properties": {
+        "minLen": { "type": "integer", "default": 1 },
+        "maxLen": { "type": "integer", "default": 1024 },
+        "skipCjk": { "type": "boolean", "default": true },
+        "skipPaths": { "type": "boolean", "default": true },
+        "rateLimitPerSec": { "type": "integer", "default": 200 }
+      }
+    },
+    "dictionaryPaths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "词典文件路径列表，支持 AutoTranslator flat（key=value）与 JSON"
+    },
+    "cachePath": {
+      "type": "string",
+      "description": "SQLite 缓存路径，默认 %APPDATA%\\GameTextInjector\\cache.db"
+    }
+  }
+}

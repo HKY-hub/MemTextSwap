@@ -1,0 +1,8 @@
+LIBRARY NativeCore
+EXPORTS
+    GTI_ThreadEntry
+    GTI_Start
+    GTI_RequestUnload
+    GTI_Version
+    gti_py_translate
+    gti_py_translate_free
