@@ -1,0 +1,9 @@
+{
+  "name": "gti-nwjs-harness",
+  "main": "index.html",
+  "window": {
+    "title": "GameTextInjector NW.js Harness",
+    "width": 800,
+    "height": 480
+  }
+}

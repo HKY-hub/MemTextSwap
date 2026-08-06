@@ -20,10 +20,14 @@ bool HasModule(const std::wstring& name) {
     return mod != nullptr;
 }
 
-bool HasAnyModulePrefix(const std::vector<std::wstring>& names, const std::wstring& prefix) {
+bool HasPythonModule(const std::vector<std::wstring>& names) {
     for (const auto& n : names) {
-        if (n.size() >= prefix.size() &&
-            _wcsnicmp(n.c_str(), prefix.c_str(), prefix.size()) == 0) {
+        std::wstring lower = n;
+        for (auto& c : lower) {
+            c = static_cast<wchar_t>(towlower(c));
+        }
+        if (lower.find(L"python") != std::wstring::npos &&
+            lower.find(L".dll") != std::wstring::npos) {
             return true;
         }
     }
@@ -97,7 +101,7 @@ EngineInfo DetectEngine() {
         return {GtiEngine::RpgMakerMz, "RPGMaker (NW.js)"};
     }
     // RenPy embeds a python runtime
-    if (HasAnyModulePrefix(modules, L"python")) {
+    if (HasPythonModule(modules)) {
         return {GtiEngine::RenPy, "RenPy"};
     }
     // TestTarget harness

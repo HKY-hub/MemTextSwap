@@ -167,28 +167,37 @@ bool InstallUnityIl2CppHooks() {
         }
     }
 
-    bool ok = true;
+    int installed = 0;
     if (fnNew) {
-        ok &= HookManager::Install("il2cpp_string_new", fnNew,
-                                   reinterpret_cast<void*>(&DetourStringNew),
-                                   reinterpret_cast<void**>(&g_origNew));
+        installed += HookManager::Install("il2cpp_string_new", fnNew,
+                                          reinterpret_cast<void*>(&DetourStringNew),
+                                          reinterpret_cast<void**>(&g_origNew))
+                         ? 1
+                         : 0;
     }
     if (fnWrapper) {
-        ok &= HookManager::Install("il2cpp_string_new_wrapper", fnWrapper,
-                                   reinterpret_cast<void*>(&DetourStringNewWrapper),
-                                   reinterpret_cast<void**>(&g_origWrapper));
+        installed += HookManager::Install("il2cpp_string_new_wrapper", fnWrapper,
+                                          reinterpret_cast<void*>(&DetourStringNewWrapper),
+                                          reinterpret_cast<void**>(&g_origWrapper))
+                         ? 1
+                         : 0;
     }
     if (fnNewLen) {
-        ok &= HookManager::Install("il2cpp_string_new_len", fnNewLen,
-                                   reinterpret_cast<void*>(&DetourStringNewLen),
-                                   reinterpret_cast<void**>(&g_origNewLen));
+        installed += HookManager::Install("il2cpp_string_new_len", fnNewLen,
+                                          reinterpret_cast<void*>(&DetourStringNewLen),
+                                          reinterpret_cast<void**>(&g_origNewLen))
+                         ? 1
+                         : 0;
     }
     if (fnNewUtf16) {
-        ok &= HookManager::Install("il2cpp_string_new_utf16", fnNewUtf16,
-                                   reinterpret_cast<void*>(&DetourStringNewUtf16),
-                                   reinterpret_cast<void**>(&g_origNewUtf16));
+        installed += HookManager::Install("il2cpp_string_new_utf16", fnNewUtf16,
+                                          reinterpret_cast<void*>(&DetourStringNewUtf16),
+                                          reinterpret_cast<void**>(&g_origNewUtf16))
+                         ? 1
+                         : 0;
     }
-    return ok;
+    Log(LogLevel::Info, "IL2CPP hooks installed: %d", installed);
+    return installed > 0;
 }
 
 }  // namespace gti

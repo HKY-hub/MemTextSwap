@@ -56,6 +56,12 @@ bool HookManager::Install(const char* name, void* target, void* detour, void** o
     void* trampoline = nullptr;
     MH_STATUS status = MH_CreateHook(target, detour, &trampoline);
     if (status != MH_OK) {
+        if (status == MH_ERROR_ALREADY_CREATED) {
+            // The target is already hooked (e.g. two exports alias the same
+            // address); treat as a no-op rather than an error.
+            Log(LogLevel::Info, "hook '%s' already created (alias target)", name ? name : "?");
+            return true;
+        }
         Log(LogLevel::Warn, "hook '%s' create failed: %d", name ? name : "?", status);
         return false;
     }
