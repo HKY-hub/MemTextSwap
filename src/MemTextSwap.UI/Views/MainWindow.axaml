@@ -101,13 +101,21 @@
             </TabItem>
 
             <TabItem Header="日志">
-                <ListBox ItemsSource="{Binding Logs}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8"
+                                Margin="0,0,0,6">
+                        <Button Content="导出日志…" Click="OnExportLogs" />
+                        <TextBlock Text="{Binding LogFilePath}" VerticalAlignment="Center"
+                                   Foreground="#888888" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding Logs}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
             </TabItem>
         </TabControl>
     </DockPanel>

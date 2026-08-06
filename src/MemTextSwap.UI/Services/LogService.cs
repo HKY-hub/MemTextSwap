@@ -10,6 +10,7 @@ public sealed class LogService
     private readonly string _filePath;
 
     public ObservableCollection<LogEntry> Entries { get; } = new();
+    public string LogFilePath { get; }
 
     public event Action<LogEntry>? EntryAdded;
 
@@ -19,6 +20,7 @@ public sealed class LogService
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MemTextSwap", "logs");
         _filePath = Path.Combine(dir, "app.log");
+        LogFilePath = _filePath;
         try
         {
             Directory.CreateDirectory(dir);
@@ -53,5 +55,17 @@ public sealed class LogService
         catch
         {
         }
+    }
+
+    public void ExportTo(string path)
+    {
+        List<LogEntry> snapshot;
+        lock (_lock)
+        {
+            snapshot = Entries.ToList();
+        }
+        var lines = snapshot.Select(e =>
+            $"[{e.Time:yyyy-MM-dd HH:mm:ss}] {e.Level} {e.Message}");
+        File.WriteAllLines(path, lines);
     }
 }

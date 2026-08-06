@@ -51,6 +51,21 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string sessionsSummary = "无活动会话";
 
+    public string LogFilePath => _log.LogFilePath;
+
+    public void ExportLogs(string path)
+    {
+        try
+        {
+            _log.ExportTo(path);
+            StatusText = $"日志已导出: {path}";
+        }
+        catch (Exception ex)
+        {
+            HandleCommandError("导出日志", ex);
+        }
+    }
+
     public void SetStatus(string message)
     {
         StatusText = message;

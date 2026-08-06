@@ -71,4 +71,26 @@ public partial class MainWindow : Window
             viewModel.InjectCommand.Execute(null);
         }
     }
+
+    private async void OnExportLogs(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null)
+        {
+            return;
+        }
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "导出日志",
+            SuggestedFileName = $"MemTextSwap-logs-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
+        });
+        if (file is not null)
+        {
+            viewModel.ExportLogs(file.TryGetLocalPath() ?? file.Path.LocalPath);
+        }
+    }
 }

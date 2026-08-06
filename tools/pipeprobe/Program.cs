@@ -10,6 +10,14 @@ using MemTextSwap.UI.Services;
 string pipeName = args.Length > 0 ? args[0] : "GTI_probe_test";
 bool asyncMode = args.Length > 1 && args[1] == "--async";
 bool threadPoolMode = args.Length > 2 && args[2] == "--threadpool";
+int delayMs = 0;
+for (int i = 1; i < args.Length - 1; i++)
+{
+    if (args[i] == "--delay" && int.TryParse(args[i + 1], out int d))
+    {
+        delayMs = d;
+    }
+}
 
 async Task RunServer()
 {
@@ -93,6 +101,10 @@ async Task RunServer()
             response[16] = 2;
             target.CopyTo(response, 20);
             byte[] resultFrame = IpcProtocol.BuildFrame(IpcProtocol.MsgType.TextResult, 0, response);
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs);
+            }
             if (asyncMode)
             {
                 await server.WriteAsync(resultFrame);

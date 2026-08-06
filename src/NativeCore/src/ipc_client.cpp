@@ -256,6 +256,27 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
         return false;
     }
 
+    // Rolling stall budget: when the UI/translator is slow, cap how long the
+    // game threads may block each second so the game stays responsive.
+    constexpr int32_t kBudgetMs = 250;
+    static std::atomic<int64_t> gWindowStartTick{0};
+    static std::atomic<int32_t> gWindowBlockedMs{0};
+    int64_t nowTick = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          std::chrono::steady_clock::now().time_since_epoch())
+                          .count();
+    int64_t windowStart = gWindowStartTick.load();
+    if (nowTick - windowStart >= 1000) {
+        gWindowStartTick.store(nowTick);
+        gWindowBlockedMs.store(0);
+    }
+    int32_t used = gWindowBlockedMs.load();
+    if (used >= kBudgetMs) {
+        return false;
+    }
+    int32_t allowed = std::max(1, kBudgetMs - used);
+    uint32_t effectiveTimeout = std::min(timeoutMs, static_cast<uint32_t>(allowed));
+    auto stallStart = std::chrono::steady_clock::now();
+
     uint32_t corr = nextCorr_.fetch_add(1);
     std::vector<uint8_t> payload;
     wire::PutU32(payload, corr);
@@ -268,7 +289,7 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
     }
 
     auto deadline = std::chrono::steady_clock::now() +
-                    std::chrono::milliseconds(timeoutMs);
+                    std::chrono::milliseconds(effectiveTimeout);
     while (std::chrono::steady_clock::now() < deadline) {
         uint32_t remaining = static_cast<uint32_t>(
             std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -277,12 +298,23 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
         GtiFrame response;
         if (!ReadFrameWithTimeout(&response, std::max(remaining, 1u))) {
             connected_.store(false);
+            int64_t elapsed =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stallStart)
+                    .count();
+            gWindowBlockedMs.fetch_add(static_cast<int32_t>(std::min<int64_t>(elapsed, 1000)));
             return false;
         }
         if (static_cast<MsgType>(response.header.type) == MsgType::TextResult) {
             const uint8_t* rp = response.payload.data();
             size_t rn = response.payload.size();
             if (rn < 20) {
+                int64_t elapsed =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - stallStart)
+                        .count();
+                gWindowBlockedMs.fetch_add(
+                    static_cast<int32_t>(std::min<int64_t>(elapsed, 1000)));
                 return false;
             }
             uint32_t ok = wire::GetU32(rp + 12);
@@ -294,10 +326,18 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
                 *outOrigin = origin == 1 ? "cache" : origin == 2 ? "dict"
                                                                  : origin == 3 ? "ai" : "manual";
             }
+            int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                  std::chrono::steady_clock::now() - stallStart)
+                                  .count();
+            gWindowBlockedMs.fetch_add(static_cast<int32_t>(std::min<int64_t>(elapsed, 1000)));
             return ok != 0;
         }
         HandleFrame(response);  // e.g. UNLOAD delivered while a request is in flight
     }
+    int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          std::chrono::steady_clock::now() - stallStart)
+                          .count();
+    gWindowBlockedMs.fetch_add(static_cast<int32_t>(std::min<int64_t>(elapsed, 1000)));
     return false;
 }
 
