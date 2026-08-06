@@ -24,7 +24,15 @@ dotnet build "$root\src\MemTextSwap.UI" -c Release
 dotnet test "$root\tests\MemTextSwap.Tests" -c Release
 if ($LASTEXITCODE -ne 0) { throw "C# tests failed" }
 
-Write-Host "== 5/5 密钥扫描（推送门禁）=="
+Write-Host "== 5/6 打包原生产物到 UI 输出目录 =="
+$uiOut = "$root\src\MemTextSwap.UI\bin\Release\net8.0-windows"
+Copy-Item "$root\build\x64\src\NativeCore\Release\NativeCore64.dll" $uiOut -Force
+Copy-Item "$root\build\x64\src\NativeCore\Release\Injector64.exe" $uiOut -Force
+Copy-Item "$root\build\x86\src\NativeCore\Release\NativeCore32.dll" $uiOut -Force
+Copy-Item "$root\build\x86\src\NativeCore\Release\Injector32.exe" $uiOut -Force
+Write-Host "已复制 NativeCore32/64.dll 与 Injector32/64.exe 到 $uiOut"
+
+Write-Host "== 6/6 密钥扫描（推送门禁）=="
 $patterns = 'sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKID[A-Za-z0-9]{10,}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY'
 $hits = & rg --hidden -g '!build/**' -g '!third_party/**' -g '!.git/**' -n $patterns $root 2>$null
 if ($LASTEXITCODE -eq 0 -and $hits) {
