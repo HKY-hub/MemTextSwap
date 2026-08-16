@@ -10,6 +10,7 @@ set(GTI_CORE_SOURCES
     src/hooks_testtarget.cpp
     src/hooks_unity_il2cpp.cpp
     src/hooks_unity_mono.cpp
+    src/unity_scanner.cpp
     src/hooks_renpy.cpp
     src/hooks_rpgmaker.cpp
 )

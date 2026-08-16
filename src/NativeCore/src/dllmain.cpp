@@ -118,6 +118,9 @@ DWORD WINAPI WorkerMain(const std::wstring& pipeName) {
 
     bool hooked = InstallEngineHooks();
     Log(LogLevel::Info, "engine hooks installed: %s", hooked ? "yes" : "no");
+    if (info.engine == GtiEngine::UnityIL2CPP) {
+        StartUnityScanner();
+    }
 
     IpcClient::Instance().SetUnloadHandler([]() {
         if (g_unloadEvent) {
@@ -132,6 +135,7 @@ DWORD WINAPI WorkerMain(const std::wstring& pipeName) {
     }
 
     Log(LogLevel::Info, "unloading: disabling hooks, disconnecting IPC");
+    StopUnityScanner();
     SetHooksActive(false);
     IpcClient::Instance().Stop();
     HookManager::UninstallAll();

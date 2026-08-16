@@ -29,4 +29,10 @@ void SetHooksActive(bool active);
 // Installs hooks for the detected engine. Returns true if at least one hook is active.
 bool InstallEngineHooks();
 
+// Unity IL2CPP static scanner: periodically enumerates existing Text/TMP_Text
+// components, translates their current text and writes it back via set_text.
+// This covers text that was created before hook installation.
+void StartUnityScanner();
+void StopUnityScanner();
+
 }  // namespace gti
