@@ -19,8 +19,10 @@ public sealed class InjectorService
         string arch = is64Bit ? "64" : "32";
         string? dll = FindArtifact($"NativeCore{arch}.dll");
         string? injector = FindArtifact($"Injector{arch}.exe");
+        _log.Debug($"注入产物查找 arch={arch} dll={dll ?? "(未找到)"} injector={injector ?? "(未找到)"}");
         if (dll is null || injector is null)
         {
+            _log.Error($"注入失败: 原生产物缺失 dll={dll ?? "null"} injector={injector ?? "null"}（当前目录: {AppContext.BaseDirectory}）");
             return new InjectResult(false, 20, "native artifacts not found");
         }
 
@@ -50,6 +52,7 @@ public sealed class InjectorService
             string output = await process.StandardOutput.ReadToEndAsync();
             string error = await process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync();
+            _log.Debug($"注入器退出码: {process.ExitCode}");
             if (!string.IsNullOrEmpty(error))
             {
                 _log.Warn($"注入器 stderr: {error.Trim()}");
@@ -62,7 +65,7 @@ public sealed class InjectorService
         }
         catch (Exception ex)
         {
-            _log.Error($"注入失败: {ex.Message}");
+            _log.Error($"注入失败", ex);
             return new InjectResult(false, 22, ex.Message);
         }
     }

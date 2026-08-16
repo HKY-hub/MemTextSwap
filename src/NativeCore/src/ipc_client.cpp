@@ -43,8 +43,11 @@ bool IpcClient::ConnectOnce(const std::wstring& pipeName) {
         PipeNameFor(pipeName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (pipe == INVALID_HANDLE_VALUE) {
+        Log(LogLevel::Debug, "IPC connect failed: %ls err=%lu", PipeNameFor(pipeName).c_str(),
+            GetLastError());
         return false;
     }
+    Log(LogLevel::Debug, "IPC connect ok: %ls", PipeNameFor(pipeName).c_str());
     pipe_ = pipe;
     connected_.store(true);
 
@@ -180,7 +183,7 @@ void IpcClient::HandleFrame(const GtiFrame& frame) {
 
 void IpcClient::ControlLoop() {
     uint32_t backoff = kReconnectBaseMs;
-    auto lastPing = std::chrono::steady_clock::now();
+    auto lastStats = std::chrono::steady_clock::now();
     while (running_.load()) {
         if (!connected_.load()) {
             if (ConnectOnce(pipeName_)) {
@@ -189,15 +192,8 @@ void IpcClient::ControlLoop() {
                 std::this_thread::sleep_for(std::chrono::milliseconds(backoff));
                 backoff = std::min(backoff * 2, kReconnectMaxMs);
             }
-            lastPing = std::chrono::steady_clock::now();
             continue;
         }
-
-        // Heartbeat PING is intentionally disabled: on pipes where writes
-        // complete only when the peer is reading, an extra write stream can
-        // rendezvous-deadlock the request path. Liveness is inferred from the
-        // persistent connection and request traffic.
-        (void)lastPing;
 
         // Drain UI->DLL control frames (UNLOAD/PONG) between requests. The peek
         // and the read happen under the SAME lock so a request thread can never
@@ -211,6 +207,12 @@ void IpcClient::ControlLoop() {
             if (ReadFrame(&frame)) {
                 HandleFrame(frame);
             }
+        }
+        auto now = std::chrono::steady_clock::now();
+        if (now - lastStats >= std::chrono::seconds(30)) {
+            lastStats = now;
+            Log(LogLevel::Info, "IPC stats: captured=%llu translated=%llu skipped=%llu",
+                captured.load(), translated.load(), skipped.load());
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -287,8 +289,11 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
     wire::PutString(payload, source);
     if (!SendFrameLocked(MsgType::TextRequest, 0, payload.data(),
                          static_cast<uint32_t>(payload.size()))) {
+        Log(LogLevel::Warn, "IPC request send failed corr=%u", corr);
         return false;
     }
+    Log(LogLevel::Debug, "IPC request sent corr=%u engine=%u len=%zu", corr, engine,
+        source.size());
 
     auto deadline = std::chrono::steady_clock::now() +
                     std::chrono::milliseconds(effectiveTimeout);
@@ -300,6 +305,7 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
         GtiFrame response;
         if (!ReadFrameWithTimeout(&response, std::max(remaining, 1u))) {
             connected_.store(false);
+            Log(LogLevel::Warn, "IPC request read failed/timeout corr=%u", corr);
             int64_t elapsed =
                 std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - stallStart)
@@ -320,6 +326,7 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
                 return false;
             }
             uint32_t ok = wire::GetU32(rp + 12);
+            Log(LogLevel::Debug, "IPC result corr=%u ok=%u len=%zu", corr, ok, rn);
             if (ok && outTarget) {
                 *outTarget = std::string(reinterpret_cast<const char*>(rp + 20), rn - 20);
             }
@@ -340,6 +347,7 @@ bool IpcClient::RequestTranslation(const std::string& source, uint32_t engine,
                           std::chrono::steady_clock::now() - stallStart)
                           .count();
     gWindowBlockedMs.fetch_add(static_cast<int32_t>(std::min<int64_t>(elapsed, 1000)));
+    Log(LogLevel::Warn, "IPC request timed out corr=%u timeout=%ums", corr, effectiveTimeout);
     return false;
 }
 

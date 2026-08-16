@@ -39,23 +39,28 @@ public sealed class AIService
     {
         if (!IsConfigured)
         {
+            _log.Warn("AI 未配置（缺少 BaseUrl 或 API Key），跳过 AI 翻译");
             return null;
         }
         var ai = _settings.Current.Ai;
+        string preview = source.Length > 200 ? source[..200] + "…" : source;
         for (int attempt = 0; attempt <= ai.Retries; attempt++)
         {
+            var started = DateTime.UtcNow;
             try
             {
                 string content = await CallAsync(source, ct);
                 string cleaned = Sanitize(content);
                 if (!string.IsNullOrWhiteSpace(cleaned) && cleaned != source)
                 {
+                    _log.Debug($"AI 翻译成功 attempt={attempt + 1} model={ai.Model} ms={(DateTime.UtcNow - started).TotalMilliseconds:F0} source={preview}");
                     return cleaned;
                 }
+                _log.Warn($"AI 返回内容清洗后为空/无效 attempt={attempt + 1} raw={content}");
             }
             catch (Exception ex)
             {
-                _log.Warn($"AI 翻译请求失败（第 {attempt + 1} 次）: {ex.Message}");
+                _log.Warn($"AI 翻译请求失败（第 {attempt + 1} 次）model={ai.Model} source={preview}: {ex}");
             }
         }
         return null;

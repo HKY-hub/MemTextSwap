@@ -39,10 +39,11 @@ public sealed class SettingsService
             {
                 Current.CachePath = Path.Combine(ConfigDir, "cache.db");
             }
+            _log.Info($"配置已加载: mode={Current.TranslationMode} 词典数={Current.DictionaryPaths.Count} AI已配置={(Current.Ai is not null && !string.IsNullOrWhiteSpace(Current.Ai.ApiKey))} 缓存={Current.CachePath}");
         }
         catch (Exception ex)
         {
-            _log.Warn($"配置文件读取失败，使用默认配置: {ex.Message}");
+            _log.Warn($"配置文件读取失败，使用默认配置: {ex}");
         }
     }
 
@@ -52,11 +53,11 @@ public sealed class SettingsService
         {
             Directory.CreateDirectory(ConfigDir);
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(Current, JsonOptions));
-            _log.Info("配置已保存");
+            _log.Info($"配置已保存: mode={Current.TranslationMode} 词典数={Current.DictionaryPaths.Count}");
         }
         catch (Exception ex)
         {
-            _log.Error($"配置保存失败: {ex.Message}");
+            _log.Error($"配置保存失败: {ex}");
         }
     }
 }

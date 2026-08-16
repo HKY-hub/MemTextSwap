@@ -52,6 +52,7 @@ public partial class MainWindowViewModel : ObservableObject
     private string sessionsSummary = "无活动会话";
 
     public string LogFilePath => _log.LogFilePath;
+    public string LogsDirectory => _log.LogsDirectory;
 
     public void ExportLogs(string path)
     {

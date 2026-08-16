@@ -69,7 +69,7 @@ public sealed class TranslationSession : IAsyncDisposable
                 _log.Info($"DLL 已连接: pid={Pid} pipe={PipeName}");
                 _activePipe = pipe;
                 ReadLoop(pipe);
-                _log.Warn($"DLL 连接断开: pid={Pid}");
+                _log.Warn($"DLL 连接断开: pid={Pid}（将重新等待连接）");
                 _activePipe = null;
                 pipe.Dispose();
                 pipe = null;
@@ -173,7 +173,7 @@ public sealed class TranslationSession : IAsyncDisposable
         string name = Encoding.UTF8.GetString(payload, 20, payload.Length - 20);
         Engine = engine;
         EngineName = name;
-        _log.Info($"HELLO: pid={pid} arch={(arch == 2 ? "x64" : "x86")} engine={name}");
+        _log.Info($"HELLO: pid={pid} arch={(arch == 2 ? "x64" : "x86")} engine={name} raw={payload.Length}B");
 
         var response = new byte[20];
         BinaryPrimitives.WriteUInt32LittleEndian(response, corr);
@@ -199,6 +199,10 @@ public sealed class TranslationSession : IAsyncDisposable
         TranslationResult result = _translation.TranslateAsync(source, engine)
             .GetAwaiter().GetResult();
         _log.Info($"TEXT_RESULT pid={Pid}: {result.Origin} => {result.Target}");
+        if (!result.IsSuccess)
+        {
+            _log.Warn($"翻译未命中（将回原文显示）: pid={Pid} source={source}");
+        }
         byte[] targetBytes = Encoding.UTF8.GetBytes(result.Target);
         var response = new byte[20 + targetBytes.Length];
         BinaryPrimitives.WriteUInt32LittleEndian(response, corr);

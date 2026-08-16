@@ -31,10 +31,14 @@ public sealed class TranslationService
         {
             return new TranslationResult("", "none");
         }
+        var started = DateTime.UtcNow;
+        string preview = source.Length > 200 ? source[..200] + "…" : source;
+        _log.Debug($"翻译管线开始 engine={engine} source={preview}");
 
         string? cached = await _cache.GetAsync(source);
         if (!string.IsNullOrEmpty(cached))
         {
+            _log.Debug($"翻译管线命中缓存 source={preview} -> {cached}");
             return new TranslationResult(cached, "cache");
         }
 
@@ -42,11 +46,13 @@ public sealed class TranslationService
         if (!string.IsNullOrEmpty(dict))
         {
             await _cache.PutAsync(source, dict, engine, "dict");
+            _log.Debug($"翻译管线命中词典 source={preview} -> {dict}");
             return new TranslationResult(dict, "dict");
         }
 
         if (_settings.Current.TranslationMode.Equals("Ai", StringComparison.OrdinalIgnoreCase))
         {
+            _log.Debug($"翻译管线进入 AI source={preview}");
             await _aiGate.WaitAsync(ct);
             try
             {
@@ -54,14 +60,18 @@ public sealed class TranslationService
                 if (!string.IsNullOrEmpty(target))
                 {
                     await _cache.PutAsync(source, target, engine, "ai");
+                    _log.Debug($"翻译管线 AI 完成 source={preview} -> {target}");
                     return new TranslationResult(target, "ai");
                 }
+                _log.Warn($"翻译管线 AI 未返回有效译文 source={preview}");
             }
             finally
             {
                 _aiGate.Release();
             }
         }
+        var elapsed = DateTime.UtcNow - started;
+        _log.Warn($"翻译管线未命中任何来源（cache/dict/ai） source={preview} elapsed={elapsed.TotalMilliseconds:F0}ms mode={_settings.Current.TranslationMode}");
         return new TranslationResult("", "none");
     }
 }

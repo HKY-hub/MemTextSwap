@@ -13,6 +13,19 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        try
+        {
+            // 只保留最新崩溃日志
+            string dir = Path.GetDirectoryName(CrashLogPath)!;
+            Directory.CreateDirectory(dir);
+            if (File.Exists(CrashLogPath))
+            {
+                File.Delete(CrashLogPath);
+            }
+        }
+        catch
+        {
+        }
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             WriteCrash("UnhandledException", e.ExceptionObject as Exception);
         TaskScheduler.UnobservedTaskException += (_, e) =>

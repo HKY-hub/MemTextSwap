@@ -93,4 +93,25 @@ public partial class MainWindow : Window
             viewModel.ExportLogs(file.TryGetLocalPath() ?? file.Path.LocalPath);
         }
     }
+
+    private void OnOpenLogsDirectory(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = viewModel.LogsDirectory,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            viewModel.SetStatus($"打开日志目录失败: {ex.Message}");
+        }
+    }
 }
